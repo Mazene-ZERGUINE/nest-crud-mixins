@@ -1,0 +1,70 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    name: 🏗️ Build Project
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: 'npm'
+
+      - name: 📥 Install Dependencies
+        run: npm ci
+
+      - name: 🏗️ Build Project
+        run: npm run build
+
+  lint:
+    name: 🔍 Lint Check
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: 'npm'
+
+      - name: 📥 Install Dependencies
+        run: npm ci
+
+      - name: 🔍 Run Lint Check
+        run: npm run lint
+
+  test:
+    name: 🧪 Run Tests
+    runs-on: ubuntu-latest
+    needs: lint
+
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: 'npm'
+
+      - name: 📥 Install Dependencies
+        run: npm ci
+
+      - name: 🧪 Run Tests
+        run: npm test
