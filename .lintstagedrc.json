@@ -1,6 +1,6 @@
 {
   "src/**/*.ts": [
-    "eslint --fix",
+    "npm run lint",
     "prettier --write"
   ]
 }
