@@ -1,7 +1,9 @@
-export interface IMixinsCrudService<DTO, ENTITY> {
-  createEntity(dto: DTO): Promise<ENTITY | void>;
+import { DeepPartial } from 'typeorm';
+
+export interface IMixinsCrudService<ENTITY> {
+  createEntity(entity: DeepPartial<ENTITY>): Promise<ENTITY>;
   findAllEntities(): Promise<ENTITY[]>;
-  findEntity(id: number | string): Promise<ENTITY | null>;
-  deleteEntity(id: number | string): Promise<void>;
-  partialUpdate(id: number | string, dto: DTO): Promise<ENTITY>;
+  findEntity(id: string | number): Promise<ENTITY | null>;
+  deleteEntity(id: string | number): void;
+  updateEntity(id: string | number, entity: any): Promise<ENTITY | null>;
 }

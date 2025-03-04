@@ -1,8 +1,10 @@
-export interface ICrudControllerInterface<DTO, RESPONSE_DTO> {
-  create(createDto: DTO): Promise<RESPONSE_DTO | void>;
-  getAll(): Promise<RESPONSE_DTO[]>;
-  getOne(id: number | string): Promise<RESPONSE_DTO | undefined>;
+import { DeepPartial } from 'typeorm';
+
+export interface IMixinsCrudControllerInterface<ENTITY> {
+  create(createDto: DeepPartial<ENTITY>): Promise<DeepPartial<ENTITY>>;
+  getAll(): Promise<DeepPartial<ENTITY>[]>;
+  getOne(id: number | string): Promise<DeepPartial<ENTITY> | undefined>;
   delete(id: number | string): Promise<void>;
-  update(id: number | string, updateDto: DTO): Promise<RESPONSE_DTO | void>;
-  partialUpdate(id: number | string, updateDto: DTO): Promise<RESPONSE_DTO | void>;
+  update(id: number | string, updateDto: DeepPartial<ENTITY>): Promise<DeepPartial<ENTITY>>;
+  partialUpdate(id: number | string, updateDto: DeepPartial<ENTITY>): Promise<DeepPartial<ENTITY>>;
 }

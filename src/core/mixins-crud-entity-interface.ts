@@ -1,4 +1,4 @@
 export interface IMixinsCrudEntity<RESPONSE_DTO> {
-  toModel(): RESPONSE_DTO;
+  registerRelations(relation: string[]): void;
   getRelations(): string[];
 }

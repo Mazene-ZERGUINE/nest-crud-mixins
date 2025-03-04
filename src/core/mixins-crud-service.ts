@@ -1,44 +1,47 @@
-import { IMixinsCrudEntity } from './mixins-crud-entity-interface';
 import { IMixinsCrudService } from './mixins-crud-service-interface';
+import { MixinsCrudEntity } from './mixins-crud-entity';
 import { DeepPartial, FindOptionsWhere, Repository } from 'typeorm';
 import { NotFoundException } from '@nestjs/common';
 
-export abstract class MixinsCrudService<
-  DTO extends DeepPartial<ENTITY>,
-  ENTITY extends IMixinsCrudEntity<RESPONSE_DTO>,
-  RESPONSE_DTO,
-> implements IMixinsCrudService<DTO, ENTITY>
+export abstract class MixinsCrudService<ENTITY extends MixinsCrudEntity>
+  implements IMixinsCrudService<ENTITY>
 {
-  protected constructor(private readonly _repository: Repository<ENTITY>) {}
+  protected constructor(
+    private readonly repository: Repository<ENTITY>,
+    private readonly entity: ENTITY,
+  ) {}
 
-  async createEntity(dto: DTO): Promise<ENTITY> {
-    const entity = this._repository.create(dto);
-    return await this._repository.save(entity);
+  private readonly relations: string[] = this.entity.getRelations();
+
+  async createEntity(entity: DeepPartial<ENTITY>): Promise<ENTITY> {
+    const newEntity: ENTITY = this.repository.create(entity);
+    return await this.repository.save(newEntity);
   }
 
-  async deleteEntity(id: number | string): Promise<void> {
-    await this._repository.delete(id);
+  async deleteEntity(id: string | number): Promise<void> {
+    await this.repository.delete(id);
   }
 
   async findAllEntities(): Promise<ENTITY[]> {
-    return this._repository.find();
+    return await this.repository.find({ relations: this.relations });
   }
 
-  async findEntity(id: number | string): Promise<ENTITY | null> {
+  async findEntity(id: string | number): Promise<ENTITY | null> {
     const searchCriteria = {
       ['id']: id as unknown,
     } as FindOptionsWhere<ENTITY>;
-    return await this._repository.findOneBy(searchCriteria);
+    return await this.repository.findOne({
+      where: searchCriteria,
+      relations: this.relations,
+    });
   }
 
-  async partialUpdate(id: number | string, dto: DTO): Promise<ENTITY> {
+  async updateEntity(id: string | number, updateDto: DeepPartial<ENTITY>): Promise<ENTITY | null> {
     const entity = await this.findEntity(id);
-    if (entity) {
-      const updatedEntity = this._repository.merge(entity, dto);
-      return await this._repository.save(updatedEntity);
-    } else {
-      // TODO: Replace with custom exceptions later and better logging for errors //
-      throw new NotFoundException(`Entity ${id} not found`);
+    if (!entity) {
+      throw new NotFoundException('Entity not found');
     }
+    const updatedEntity = this.repository.merge(entity, updateDto);
+    return await this.repository.save(updatedEntity);
   }
 }
