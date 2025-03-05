@@ -88,7 +88,11 @@ export abstract class MixinsCrudController<
   @HttpCode(HttpStatus.NO_CONTENT)
   async delete(@Param('id') id: number): Promise<void> {
     try {
-      await this.service.deleteEntity(id);
+      if (this.filterOptions?.includeDeleted) {
+        await this.service.softDeleteEntity(id);
+      } else {
+        await this.service.deleteEntity(id);
+      }
     } catch (error) {
       throw new InternalServerErrorException(error);
     }
@@ -99,7 +103,7 @@ export abstract class MixinsCrudController<
   async update(
     @Param('id') id: number,
     @Body() updateDto: InstanceType<ReturnType<this['getUpdateDto']>>,
-  ): Promise<ENTITY> {
+  ): Promise<DeepPartial<ENTITY>> {
     try {
       await this.setValidationPipes(updateDto, this.getUpdateDto());
       const entity = await this.service.updateEntity(id, updateDto);
@@ -114,11 +118,20 @@ export abstract class MixinsCrudController<
   async partialUpdate(
     @Param('id') id: number,
     @Body() updateDto: InstanceType<ReturnType<this['getUpdateDto']>>,
-  ): Promise<ENTITY> {
+  ): Promise<DeepPartial<ENTITY>> {
     try {
       await this.setValidationPipes(updateDto, this.getUpdateDto());
       const entity = await this.service.updateEntity(id, updateDto);
       return this.transformToResponseDto(entity);
+    } catch (error) {
+      throw new InternalServerErrorException(error);
+    }
+  }
+
+  @Patch(':id/restore')
+  async restoreEntity(@Param('id') id: number): Promise<void> {
+    try {
+      await this.service.restoreEntity(id);
     } catch (error) {
       throw new InternalServerErrorException(error);
     }

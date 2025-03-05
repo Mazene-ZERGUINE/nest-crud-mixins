@@ -6,5 +6,6 @@ export interface IMixinsCrudService<ENTITY> {
   findAllEntities(filterOptions?: FilterOptions): Promise<ENTITY[]>;
   findEntity(id: string | number): Promise<ENTITY | null>;
   deleteEntity(id: string | number): void;
+  softDeleteEntity(id: string | number): Promise<void>;
   updateEntity(id: string | number, entity: any): Promise<ENTITY | null>;
 }

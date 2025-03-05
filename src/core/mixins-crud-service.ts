@@ -24,6 +24,10 @@ export abstract class MixinsCrudService<ENTITY extends MixinsCrudEntity>
     await this.repository.delete(id);
   }
 
+  async softDeleteEntity(id: string | number): Promise<void> {
+    await this.repository.softDelete(id);
+  }
+
   async findAllEntities(filterOptions?: FilterOptions): Promise<ENTITY[]> {
     const queryBuilder = this.repository.createQueryBuilder('entity');
 
@@ -58,5 +62,9 @@ export abstract class MixinsCrudService<ENTITY extends MixinsCrudEntity>
     }
     const updatedEntity = this.repository.merge(entity, updateDto);
     return await this.repository.save(updatedEntity);
+  }
+
+  async restoreEntity(id: number): Promise<void> {
+    await this.repository.restore(id);
   }
 }
