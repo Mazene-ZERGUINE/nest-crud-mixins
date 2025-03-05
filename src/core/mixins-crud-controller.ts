@@ -52,10 +52,6 @@ export abstract class MixinsCrudController<
     return Reflect.getMetadata(UPDATE_DTO_KEY, this.constructor) || Object;
   }
 
-  getResponseDto(): Type<any> {
-    return Reflect.getMetadata(RESPONSE_DTO_KEY, this.constructor) || Object;
-  }
-
   @Post()
   @HttpCode(HttpStatus.CREATED)
   async create(
@@ -65,7 +61,7 @@ export abstract class MixinsCrudController<
       const dto = this.getCreateDto('create');
       await this.setValidationPipes(createDto, dto);
       const entity = await this.service.createEntity(createDto);
-      return this.transformToResponseDto(entity);
+      return this.transformToResponseDto(entity, 'create');
     } catch (error) {
       throw new InternalServerErrorException(error);
     }
@@ -76,7 +72,7 @@ export abstract class MixinsCrudController<
   async getAll(): Promise<DeepPartial<ENTITY>[]> {
     try {
       const entities: ENTITY[] = await this.service.findAllEntities(this.filterOptions);
-      return entities.map((entity) => this.transformToResponseDto(entity));
+      return this.transformToResponseDto(entities, 'getAll');
     } catch (error) {
       throw new InternalServerErrorException(error);
     }
@@ -87,7 +83,7 @@ export abstract class MixinsCrudController<
   async getOne(@Param('id') id: number): Promise<DeepPartial<ENTITY> | undefined> {
     try {
       const entity = await this.service.findEntity(id);
-      return this.transformToResponseDto(entity);
+      return this.transformToResponseDto(entity, 'getOne');
     } catch (error) {
       throw new InternalServerErrorException(error);
     }
@@ -117,7 +113,7 @@ export abstract class MixinsCrudController<
       const dto = this.getCreateDto('update');
       await this.setValidationPipes(updateDto, dto);
       const entity = await this.service.updateEntity(id, updateDto);
-      return this.transformToResponseDto(entity);
+      return this.transformToResponseDto(entity, 'update');
     } catch (error) {
       throw new InternalServerErrorException(error);
     }
@@ -133,7 +129,7 @@ export abstract class MixinsCrudController<
       const dto = this.getCreateDto('update');
       await this.setValidationPipes(updateDto, dto);
       const entity = await this.service.updateEntity(id, updateDto);
-      return this.transformToResponseDto(entity);
+      return this.transformToResponseDto(entity, 'partialUpdate');
     } catch (error) {
       throw new InternalServerErrorException(error);
     }
@@ -148,16 +144,24 @@ export abstract class MixinsCrudController<
     }
   }
 
-  private transformToResponseDto<ENTITY>(
-    entity: ENTITY,
-  ): InstanceType<ReturnType<this['getResponseDto']>> {
-    const responseMetadata = Reflect.getMetadata(RESPONSE_DTO_KEY, this.constructor);
-    const { dto, transformFn } = responseMetadata;
-    const transformed = EntityToDtoMapper.map(dto, entity);
+  private transformToResponseDto<ENTITY>(entity: ENTITY | ENTITY[], methodName?: string): any {
+    const methodResponseMeta = methodName
+      ? Reflect.getMetadata(RESPONSE_DTO_KEY, this, methodName)
+      : null;
 
-    return transformFn
-      ? transformFn(transformed)
-      : (transformed as InstanceType<ReturnType<this['getResponseDto']>>);
+    const classResponseMeta = Reflect.getMetadata(RESPONSE_DTO_KEY, this.constructor) || {};
+
+    const { dto, transformFn } = methodResponseMeta || classResponseMeta || {};
+
+    const transformedData = Array.isArray(entity)
+      ? entity.map((item) => EntityToDtoMapper.map(dto || Object, item))
+      : EntityToDtoMapper.map(dto || Object, entity);
+
+    return transformFn && !Array.isArray(entity)
+      ? transformFn(transformedData)
+      : transformFn
+        ? transformFn(transformedData)
+        : transformedData;
   }
 
   private async setValidationPipes<DTO>(dto: DTO, dtoClass: new () => DTO): Promise<DTO> {
