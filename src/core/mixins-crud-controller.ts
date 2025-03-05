@@ -113,7 +113,12 @@ export abstract class MixinsCrudController<
   private transformToResponseDto<ENTITY>(
     entity: ENTITY,
   ): InstanceType<ReturnType<this['getResponseDto']>> {
-    const ResponseDto = this.getResponseDto();
-    return EntityToDtoMapper.map(ResponseDto, entity);
+    const responseMetadata = Reflect.getMetadata(RESPONSE_DTO_KEY, this.constructor);
+    const { dto, transformFn } = responseMetadata;
+    const transformed = EntityToDtoMapper.map(dto, entity);
+
+    return transformFn
+      ? transformFn(transformed)
+      : (transformed as InstanceType<ReturnType<this['getResponseDto']>>);
   }
 }
