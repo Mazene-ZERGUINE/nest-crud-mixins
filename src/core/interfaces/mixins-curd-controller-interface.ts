@@ -1,6 +1,9 @@
 import { DeepPartial } from 'typeorm';
+import { FilterOptions } from './filter-options';
 
 export interface IMixinsCrudControllerInterface<ENTITY> {
+  filterOptions?: FilterOptions;
+
   create(createDto: DeepPartial<ENTITY>): Promise<DeepPartial<ENTITY>>;
   getAll(): Promise<DeepPartial<ENTITY>[]>;
   getOne(id: number | string): Promise<DeepPartial<ENTITY> | undefined>;

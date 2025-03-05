@@ -8,6 +8,7 @@ import {
   HttpCode,
   HttpStatus,
   InternalServerErrorException,
+  NotFoundException,
   Param,
   Patch,
   Post,
@@ -20,15 +21,20 @@ import { UPDATE_DTO_KEY } from '../decorators/update-dto.decorator';
 import { RESPONSE_DTO_KEY } from '../decorators/response-dto.decorator';
 import { EntityToDtoMapper } from '../utils/entity-to-dto.mapper';
 import { DeepPartial } from 'typeorm';
+import { FilterOptions } from './interfaces/filter-options';
+import { IMixinsCrudControllerInterface } from './interfaces/mixins-curd-controller-interface';
 
 export abstract class MixinsCrudController<
   ENTITY extends MixinsCrudEntity,
   SERVICE extends MixinsCrudService<ENTITY>,
-> {
+> implements IMixinsCrudControllerInterface<ENTITY>
+{
   protected constructor(
     private readonly service: SERVICE,
     private readonly entity: ENTITY,
   ) {}
+
+  filterOptions?: FilterOptions = {};
 
   getCreateDto(): Type<any> {
     return Reflect.getMetadata(CREATE_DTO_KEY, this.constructor) || Object;
@@ -60,7 +66,7 @@ export abstract class MixinsCrudController<
   @HttpCode(HttpStatus.OK)
   async getAll(): Promise<DeepPartial<ENTITY>[]> {
     try {
-      const entities: ENTITY[] = await this.service.findAllEntities();
+      const entities: ENTITY[] = await this.service.findAllEntities(this.filterOptions);
       return entities.map((entity) => this.transformToResponseDto(entity));
     } catch (error) {
       throw new InternalServerErrorException(error);
@@ -72,9 +78,6 @@ export abstract class MixinsCrudController<
   async getOne(@Param('id') id: number): Promise<DeepPartial<ENTITY> | undefined> {
     try {
       const entity = await this.service.findEntity(id);
-      if (!entity) {
-        throw new InternalServerErrorException(`Entity ${id} not found`);
-      }
       return this.transformToResponseDto(entity);
     } catch (error) {
       throw new InternalServerErrorException(error);
