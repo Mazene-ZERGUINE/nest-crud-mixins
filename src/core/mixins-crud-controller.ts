@@ -1,6 +1,7 @@
 import { MixinsCrudEntity } from './mixins-crud-entity';
 import { MixinsCrudService } from './mixins-crud-service';
 import {
+  BadRequestException,
   Body,
   Delete,
   Get,
@@ -12,6 +13,7 @@ import {
   Post,
   Put,
   Type,
+  ValidationPipe,
 } from '@nestjs/common';
 import { CREATE_DTO_KEY } from '../decorators/create-dto.decorator';
 import { UPDATE_DTO_KEY } from '../decorators/update-dto.decorator';
@@ -120,5 +122,24 @@ export abstract class MixinsCrudController<
     return transformFn
       ? transformFn(transformed)
       : (transformed as InstanceType<ReturnType<this['getResponseDto']>>);
+  }
+
+  private async setValidationPipes<DTO>(dto: DTO, dtoClass: new () => DTO): Promise<DTO> {
+    try {
+      const validationPipe = new ValidationPipe({
+        transform: true,
+        whitelist: true,
+        forbidNonWhitelisted: true,
+        exceptionFactory: (errors) => {
+          throw new BadRequestException(errors);
+        },
+      });
+      return await validationPipe.transform(dto, {
+        type: 'body',
+        metatype: dtoClass,
+      });
+    } catch (error) {
+      throw new BadRequestException('Validation failed');
+    }
   }
 }
