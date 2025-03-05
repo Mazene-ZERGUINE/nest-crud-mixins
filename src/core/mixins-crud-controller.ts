@@ -36,11 +36,19 @@ export abstract class MixinsCrudController<
 
   filterOptions?: FilterOptions = {};
 
-  getCreateDto(): Type<any> {
+  getCreateDto(methodName?: string): Type<any> {
+    if (methodName) {
+      const methodDto = Reflect.getMetadata(CREATE_DTO_KEY, this, methodName);
+      if (methodDto) return methodDto;
+    }
     return Reflect.getMetadata(CREATE_DTO_KEY, this.constructor) || Object;
   }
 
-  getUpdateDto(): Type<any> {
+  getUpdateDto(methodName?: string): Type<any> {
+    if (methodName) {
+      const methodDto = Reflect.getMetadata(UPDATE_DTO_KEY, this, methodName);
+      if (methodDto) return methodDto;
+    }
     return Reflect.getMetadata(UPDATE_DTO_KEY, this.constructor) || Object;
   }
 
@@ -54,7 +62,8 @@ export abstract class MixinsCrudController<
     @Body() createDto: InstanceType<ReturnType<this['getCreateDto']>>,
   ): Promise<DeepPartial<ENTITY>> {
     try {
-      await this.setValidationPipes(createDto, this.getCreateDto());
+      const dto = this.getCreateDto('create');
+      await this.setValidationPipes(createDto, dto);
       const entity = await this.service.createEntity(createDto);
       return this.transformToResponseDto(entity);
     } catch (error) {
@@ -105,7 +114,8 @@ export abstract class MixinsCrudController<
     @Body() updateDto: InstanceType<ReturnType<this['getUpdateDto']>>,
   ): Promise<DeepPartial<ENTITY>> {
     try {
-      await this.setValidationPipes(updateDto, this.getUpdateDto());
+      const dto = this.getCreateDto('update');
+      await this.setValidationPipes(updateDto, dto);
       const entity = await this.service.updateEntity(id, updateDto);
       return this.transformToResponseDto(entity);
     } catch (error) {
@@ -120,7 +130,8 @@ export abstract class MixinsCrudController<
     @Body() updateDto: InstanceType<ReturnType<this['getUpdateDto']>>,
   ): Promise<DeepPartial<ENTITY>> {
     try {
-      await this.setValidationPipes(updateDto, this.getUpdateDto());
+      const dto = this.getCreateDto('update');
+      await this.setValidationPipes(updateDto, dto);
       const entity = await this.service.updateEntity(id, updateDto);
       return this.transformToResponseDto(entity);
     } catch (error) {
