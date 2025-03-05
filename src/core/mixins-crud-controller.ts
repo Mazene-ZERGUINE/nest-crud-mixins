@@ -19,6 +19,7 @@ import { CREATE_DTO_KEY } from '../decorators/create-dto.decorator';
 import { UPDATE_DTO_KEY } from '../decorators/update-dto.decorator';
 import { RESPONSE_DTO_KEY } from '../decorators/response-dto.decorator';
 import { EntityToDtoMapper } from '../utils/entity-to-dto.mapper';
+import { DeepPartial } from 'typeorm';
 
 export abstract class MixinsCrudController<
   ENTITY extends MixinsCrudEntity,
@@ -43,8 +44,11 @@ export abstract class MixinsCrudController<
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  async create(@Body() createDto: InstanceType<ReturnType<this['getCreateDto']>>): Promise<any> {
+  async create(
+    @Body() createDto: InstanceType<ReturnType<this['getCreateDto']>>,
+  ): Promise<DeepPartial<ENTITY>> {
     try {
+      await this.setValidationPipes(createDto, this.getCreateDto());
       const entity = await this.service.createEntity(createDto);
       return this.transformToResponseDto(entity);
     } catch (error) {
@@ -54,9 +58,9 @@ export abstract class MixinsCrudController<
 
   @Get()
   @HttpCode(HttpStatus.OK)
-  async getAll(): Promise<any[]> {
+  async getAll(): Promise<DeepPartial<ENTITY>[]> {
     try {
-      const entities = await this.service.findAllEntities();
+      const entities: ENTITY[] = await this.service.findAllEntities();
       return entities.map((entity) => this.transformToResponseDto(entity));
     } catch (error) {
       throw new InternalServerErrorException(error);
@@ -65,9 +69,12 @@ export abstract class MixinsCrudController<
 
   @Get(':id')
   @HttpCode(HttpStatus.OK)
-  async getOne(@Param('id') id: number): Promise<any | undefined> {
+  async getOne(@Param('id') id: number): Promise<DeepPartial<ENTITY> | undefined> {
     try {
       const entity = await this.service.findEntity(id);
+      if (!entity) {
+        throw new InternalServerErrorException(`Entity ${id} not found`);
+      }
       return this.transformToResponseDto(entity);
     } catch (error) {
       throw new InternalServerErrorException(error);
@@ -89,8 +96,9 @@ export abstract class MixinsCrudController<
   async update(
     @Param('id') id: number,
     @Body() updateDto: InstanceType<ReturnType<this['getUpdateDto']>>,
-  ): Promise<any> {
+  ): Promise<ENTITY> {
     try {
+      await this.setValidationPipes(updateDto, this.getUpdateDto());
       const entity = await this.service.updateEntity(id, updateDto);
       return this.transformToResponseDto(entity);
     } catch (error) {
@@ -103,8 +111,9 @@ export abstract class MixinsCrudController<
   async partialUpdate(
     @Param('id') id: number,
     @Body() updateDto: InstanceType<ReturnType<this['getUpdateDto']>>,
-  ): Promise<any> {
+  ): Promise<ENTITY> {
     try {
+      await this.setValidationPipes(updateDto, this.getUpdateDto());
       const entity = await this.service.updateEntity(id, updateDto);
       return this.transformToResponseDto(entity);
     } catch (error) {
