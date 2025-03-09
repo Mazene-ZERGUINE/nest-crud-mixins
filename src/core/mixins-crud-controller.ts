@@ -8,7 +8,6 @@ import {
   HttpCode,
   HttpStatus,
   InternalServerErrorException,
-  NotFoundException,
   Param,
   Patch,
   Post,
@@ -149,7 +148,10 @@ export abstract class MixinsCrudController<
       ? Reflect.getMetadata(RESPONSE_DTO_KEY, this, methodName)
       : null;
 
-    const classResponseMeta = Reflect.getMetadata(RESPONSE_DTO_KEY, this.constructor) || {};
+    const classResponseMeta = Reflect.getMetadata(RESPONSE_DTO_KEY, this.constructor);
+    if (!classResponseMeta && !methodResponseMeta) {
+      return entity;
+    }
 
     const { dto, transformFn } = methodResponseMeta || classResponseMeta || {};
 

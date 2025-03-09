@@ -30,11 +30,14 @@ export abstract class MixinsCrudService<ENTITY extends MixinsCrudEntity>
 
   async findAllEntities(filterOptions?: FilterOptions): Promise<ENTITY[]> {
     const queryBuilder = this.repository.createQueryBuilder('entity');
+    this.entity.getRelations().forEach((relation) => {
+      queryBuilder.leftJoinAndSelect(`entity.${relation}`, relation);
+    });
 
     return new QueryBuilderService(queryBuilder)
       .applyFilters(filterOptions?.filters)
       .applyOrderBy(filterOptions?.orderBy)
-      .applySelectFields(filterOptions?.selectFields)
+      .applySelectFields(filterOptions?.selectFields, this.entity.getRelations())
       .applyPagination(filterOptions?.pagination)
       .applySearch(filterOptions?.search)
       .applyDateFilter(filterOptions?.date)

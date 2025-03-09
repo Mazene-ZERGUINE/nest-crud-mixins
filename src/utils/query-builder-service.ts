@@ -25,10 +25,17 @@ export class QueryBuilderService<ENTITY extends ObjectLiteral> {
     return this;
   }
 
-  applySelectFields(selectFields?: string[]) {
+  applySelectFields(selectFields?: string[], relations?: string[]) {
     if (!selectFields || selectFields.length === 0) return this;
+    const selectedFields = new Set(selectFields);
+    relations?.forEach((relation) => {
+      this.queryBuilder.addSelect(`${relation}.id`);
+      this.queryBuilder.addSelect(`${relation}.bio`);
+    });
 
-    this.queryBuilder.select(selectFields.map((field) => `entity.${field}`));
+    selectedFields.forEach((field) => {
+      this.queryBuilder.addSelect(field.includes('.') ? field : `entity.${field}`);
+    });
 
     return this;
   }
